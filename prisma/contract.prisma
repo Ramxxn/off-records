@@ -1,0 +1,128 @@
+
+ // use prisma-8
+
+enum OrganizationRole {
+  OWNER
+  MANAGER
+  EMPLOYEE
+}
+
+model User {
+  id              Int          @id @default(autoincrement())
+  email           String       @unique
+  name            String?
+  isPlatformAdmin Boolean      @default(false)
+
+  memberships     Membership[]
+  auditLogs       AuditLog[]
+
+  createdAt       TimestamptzString @default(now())
+  updatedAt       temporal.updatedAtString()
+}
+
+
+model Organization {
+  id          Int          @id @default(autoincrement())
+  name        String
+
+  memberships Membership[]
+  workplaces  Workplace[]
+  auditLogs   AuditLog[]
+
+  createdAt   TimestamptzString @default(now())
+  updatedAt   temporal.updatedAtString()
+}
+
+
+model Workplace {
+  id             Int                   @id @default(autoincrement())
+  name           String
+  organizationId Int
+
+  organization   Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  memberships    WorkplaceMembership[]
+
+  createdAt      TimestamptzString     @default(now())
+  updatedAt      temporal.updatedAtString()
+
+  @@unique([organizationId, name])
+  @@unique([id, organizationId])
+}
+
+
+model Membership {
+  id             Int                   @id @default(autoincrement())
+  userId         Int
+  organizationId Int
+  role           OrganizationRole      @default(EMPLOYEE)
+
+  user           User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization   Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  workplaces     WorkplaceMembership[]
+
+  grantedPermissions AttendancePermission[] @relation("PermissionGrantor")
+
+  createdAt      TimestamptzString     @default(now())
+  updatedAt      temporal.updatedAtString()
+
+  @@unique([userId, organizationId])
+  @@unique([id, organizationId])
+}
+
+
+model WorkplaceMembership {
+  id             Int                   @id @default(autoincrement())
+  membershipId   Int
+  workplaceId    Int
+  organizationId Int
+
+  membership     Membership            @relation(fields: [membershipId, organizationId], references: [id, organizationId], onDelete: Cascade)
+  workplace      Workplace             @relation(fields: [workplaceId, organizationId], references: [id, organizationId], onDelete: Cascade)
+  attendance     Attendance[]
+  permission     AttendancePermission?
+
+  createdAt      TimestamptzString     @default(now())
+
+  @@unique([membershipId, workplaceId])
+}
+
+
+model Attendance {
+  id                    Int                   @id @default(autoincrement())
+  workplaceMembershipId Int
+  checkInAt             TimestamptzString     @default(now())
+  checkOutAt            TimestamptzString?
+  notes                 String?
+
+  workplaceMembership   WorkplaceMembership   @relation(fields: [workplaceMembershipId], references: [id], onDelete: Cascade)
+
+  createdAt             TimestamptzString     @default(now())
+  updatedAt             temporal.updatedAtString()
+}
+
+
+model AttendancePermission {
+  id                    Int                   @id @default(autoincrement())
+  workplaceMembershipId Int                   @unique
+  grantedByMembershipId Int
+  grantedAt             TimestamptzString     @default(now())
+
+  workplaceMembership   WorkplaceMembership   @relation(fields: [workplaceMembershipId], references: [id], onDelete: Cascade)
+  grantedBy             Membership            @relation("PermissionGrantor", fields: [grantedByMembershipId], references: [id])
+
+}
+
+model AuditLog {
+  id             Int             @id @default(autoincrement())
+  organizationId Int
+  actorUserId    Int?
+  action         String
+  entityType     String
+  entityId       String?
+  details        String?
+
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  actor          User?           @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  createdAt      TimestamptzString @default(now())
+}

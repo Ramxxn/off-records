@@ -438,12 +438,10 @@ off-records/
 │   ├── layout.tsx
 │   └── page.tsx
 │
-├── components/
-│   ├── ui/
-│   ├── forms/
-│   ├── attendance/
-│   ├── employees/
-│   └── dashboard/
+components/
+├── ui/
+├── layout/
+└── shared/
 │
 ├── lib/
 │   ├── auth/
@@ -452,9 +450,11 @@ off-records/
 │   ├── validations/
 │   └── utils/
 │
-├── prisma/
-│   ├── schema.prisma
-│   └── migrations/
+│   prisma/
+├── contract.prisma
+├── contract.json
+├── contract.d.ts
+└── db.ts
 │
 ├── types/
 │   ├── auth.ts
