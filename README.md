@@ -584,36 +584,36 @@ These features should not be implemented until the core system is stable.
 
 ---
 
-# 24. Current Development Status
+## 24. Current Development Status
 
-## Completed
-
-- Project name selected: `off-records`
-- Next.js project created.
-- TypeScript enabled.
+### Completed
+- Phase 1 repository audit completed: README, source structure, dependencies, Prisma contract, environment-variable usage, and current implementation reviewed.
+- Next.js 16.4.0, React 19.3.0, TypeScript, Tailwind CSS 4, and Prisma ORM 8 RC are installed.
 - Modular monolith architecture selected.
-- PostgreSQL selected.
-- Prisma selected.
-- Basic role/access model designed.
+- Read-only connectivity check succeeded against PostgreSQL 18.6 (`off_records`).
+- Eight core models are defined in `prisma/contract.prisma`; generated contract artifacts include the current `passwordHash` field.
 
-## In Progress
+### In Progress
+- Phase 2: registration/login, bcrypt password hashing, signed expiring sessions, hardened cookies, logout, and current-user checks are implemented. Sessions are stateless JWTs, so logout clears the current browser cookie but does not revoke a copied token; email verification/recovery and authentication rate limiting are also outstanding.
+- Phase 3: complete server-side role, organization/workplace isolation, and attendance-editor authorization.
+- Organization, workplace, membership, and attendance action/page code exists but remains partial; its permissions and end-to-end workflows need completion and tests.
 
-- PostgreSQL setup.
-- Prisma setup.
-- Database architecture.
+### Not Yet Implemented
+- Complete invitations/member assignment and employee administration.
+- Complete attendance check-in/out, history, summaries, and permission-gated editing.
+- Audit-log views, reports/exports, and platform administration.
+- Remaining dashboard, account-recovery, and production-readiness work.
 
-## Not Yet Implemented
+### Baseline Findings
+- `prisma migration status` reports no migration packages. The live database connection is verified, but this does not confirm that every physical table matches the current contract.
+- `scripts/migrate-add-password.ts` performs direct SQL DDL and is not a substitute for the Prisma 8 RC contract/migration workflow. Do not use it to modify a database; author and review a migration before applying schema changes.
+- For future schema changes, edit `prisma/contract.prisma`, run `npm run contract:emit`, then author and review a migration with `npx prisma migration plan --name <slug>` before applying it.
+- The current production build is blocked by the missing `member-actions` module imported by the workplace page.
+- TypeScript checking also reports existing query-shape errors in organization/workplace pages. Full lint has one existing unescaped-apostrophe error in the dashboard page; generated Prisma artifacts are excluded from lint.
+- The focused authentication tests pass. Repository-wide build/type-check/lint verification remains blocked by the findings above.
 
-- Authentication.
-- Organizations.
-- Workplaces.
-- Employees.
-- Managers.
-- Permissions.
-- Attendance.
-- Audit logs.
-- Reports.
-- Platform administration.
+### Next Step
+Finish Phase 2's remaining session/security requirements and establish a repeatable Prisma migration path before moving on to Phase 3 authorization and tenancy.
 
 ---
 
