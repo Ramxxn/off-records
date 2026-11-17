@@ -40,13 +40,13 @@ export default async function WorkplacePage({ params }: Props) {
   const [memberships, permissions] = await Promise.all([
     membershipIds.length > 0
       ? db.orm.public.Membership
-          .where({ id: { in: membershipIds } })
+          .where((membership) => membership.id.in(membershipIds))
           .select('id', 'userId', 'role')
           .all()
       : [],
     wms.length > 0
       ? db.orm.public.AttendancePermission
-          .where({ workplaceMembershipId: { in: wms.map((w) => w.id) } })
+          .where((permission) => permission.workplaceMembershipId.in(wms.map((w) => w.id)))
           .select('workplaceMembershipId')
           .all()
       : [],
@@ -57,7 +57,10 @@ export default async function WorkplacePage({ params }: Props) {
 
   const userIds = memberships.map((m) => m.userId);
   const users = userIds.length > 0
-    ? await db.orm.public.User.where({ id: { in: userIds } }).select('id', 'name', 'email').all()
+    ? await db.orm.public.User
+        .where((user) => user.id.in(userIds))
+        .select('id', 'name', 'email')
+        .all()
     : [];
   const userMap = Object.fromEntries(users.map((u) => [u.id, u]));
 

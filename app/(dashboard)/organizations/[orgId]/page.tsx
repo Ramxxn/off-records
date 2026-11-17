@@ -37,7 +37,10 @@ export default async function OrganizationPage({ params }: Props) {
 
   const userIds = memberships.map((m) => m.userId);
   const users = userIds.length > 0
-    ? await db.orm.public.User.where({ id: { in: userIds } }).select('id', 'name', 'email').all()
+    ? await db.orm.public.User
+        .where((user) => user.id.in(userIds))
+        .select('id', 'name', 'email')
+        .all()
     : [];
   const userMap = Object.fromEntries(users.map((u) => [u.id, u]));
 

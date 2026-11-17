@@ -4,8 +4,12 @@ import { db } from '@/prisma/db';
 import { verifySession } from '@/lib/auth/dal';
 import { getMemberContext, canManageMembers } from '@/lib/permissions';
 import { writeAuditLog } from '@/lib/utils/audit';
-import { AddMemberSchema } from '@/lib/validations/app';
+import { AddMemberSchema, WorkplaceMemberActionSchema } from '@/lib/validations/app';
 import type { ActionState } from '@/lib/auth/actions';
+
+function memberActionError(message: string): ActionState {
+  return { message };
+}
 
 export async function addMember(
   state: ActionState,
@@ -71,44 +75,66 @@ export async function addMember(
   return { message: 'Member added successfully.' };
 }
 
-export async function removeMember(workplaceMembershipId: number, organizationId: number) {
+export async function removeMember(
+  workplaceMembershipId: number,
+  organizationId: number,
+): Promise<ActionState> {
   const session = await verifySession();
+  const parsed = WorkplaceMemberActionSchema.safeParse({ workplaceMembershipId, organizationId });
+  if (!parsed.success) return memberActionError('Invalid member selection.');
 
-  const ctx = await getMemberContext(session.userId, organizationId);
-  if (!ctx || !canManageMembers(ctx)) throw new Error('Forbidden');
+  const { workplaceMembershipId: targetId, organizationId: orgId } = parsed.data;
+  const ctx = await getMemberContext(session.userId, orgId);
+  if (!ctx || !canManageMembers(ctx)) return memberActionError('Forbidden.');
+
+  const target = await db.orm.public.WorkplaceMembership
+    .where({ id: targetId, organizationId: orgId })
+    .select('id', 'workplaceId')
+    .first();
+  if (!target) return memberActionError('Member not found.');
 
   await db.orm.public.WorkplaceMembership
-    .where({ id: workplaceMembershipId })
+    .where({ id: target.id, organizationId: orgId })
     .delete();
 
   await writeAuditLog({
-    organizationId,
+    organizationId: orgId,
     actorUserId: session.userId,
     action: 'MEMBER_REMOVED',
     entityType: 'WorkplaceMembership',
-    entityId: String(workplaceMembershipId),
+    entityId: String(target.id),
   });
 
-  revalidatePath(`/dashboard/organizations/${organizationId}`);
+  revalidatePath(`/dashboard/organizations/${orgId}/workplaces/${target.workplaceId}`);
+  return { message: 'Member removed.' };
 }
 
 export async function grantAttendanceEditor(
   workplaceMembershipId: number,
   organizationId: number,
-) {
+): Promise<ActionState> {
   const session = await verifySession();
+  const parsed = WorkplaceMemberActionSchema.safeParse({ workplaceMembershipId, organizationId });
+  if (!parsed.success) return memberActionError('Invalid member selection.');
 
-  const ctx = await getMemberContext(session.userId, organizationId);
-  if (!ctx || !canManageMembers(ctx)) throw new Error('Forbidden');
+  const { workplaceMembershipId: targetId, organizationId: orgId } = parsed.data;
+  const ctx = await getMemberContext(session.userId, orgId);
+  if (!ctx || !canManageMembers(ctx)) return memberActionError('Forbidden.');
+
+  const target = await db.orm.public.WorkplaceMembership
+    .where({ id: targetId, organizationId: orgId })
+    .select('id', 'workplaceId')
+    .first();
+  if (!target) return memberActionError('Member not found.');
 
   const existing = await db.orm.public.AttendancePermission
-    .where({ workplaceMembershipId })
+    .where({ workplaceMembershipId: target.id })
     .select('id')
     .first();
-  if (existing) return;
+  if (existing) return { message: 'Attendance Editor is already enabled.' };
 
   await db.orm.public.AttendancePermission.create({
-    workplaceMembershipId,
+    workplaceMembershipId: target.id,
     grantedByMembershipId: ctx.membershipId,
   });
 
@@ -117,32 +143,49 @@ export async function grantAttendanceEditor(
     actorUserId: session.userId,
     action: 'ATTENDANCE_EDITOR_GRANTED',
     entityType: 'AttendancePermission',
-    entityId: String(workplaceMembershipId),
+    entityId: String(target.id),
   });
 
-  revalidatePath(`/dashboard/organizations/${organizationId}`);
+  revalidatePath(`/dashboard/organizations/${orgId}/workplaces/${target.workplaceId}`);
+  return { message: 'Attendance Editor enabled.' };
 }
 
 export async function revokeAttendanceEditor(
   workplaceMembershipId: number,
   organizationId: number,
-) {
+): Promise<ActionState> {
   const session = await verifySession();
+  const parsed = WorkplaceMemberActionSchema.safeParse({ workplaceMembershipId, organizationId });
+  if (!parsed.success) return memberActionError('Invalid member selection.');
 
-  const ctx = await getMemberContext(session.userId, organizationId);
-  if (!ctx || !canManageMembers(ctx)) throw new Error('Forbidden');
+  const { workplaceMembershipId: targetId, organizationId: orgId } = parsed.data;
+  const ctx = await getMemberContext(session.userId, orgId);
+  if (!ctx || !canManageMembers(ctx)) return memberActionError('Forbidden.');
+
+  const target = await db.orm.public.WorkplaceMembership
+    .where({ id: targetId, organizationId: orgId })
+    .select('id', 'workplaceId')
+    .first();
+  if (!target) return memberActionError('Member not found.');
+
+  const permission = await db.orm.public.AttendancePermission
+    .where({ workplaceMembershipId: target.id })
+    .select('id')
+    .first();
+  if (!permission) return { message: 'Attendance Editor is already disabled.' };
 
   await db.orm.public.AttendancePermission
-    .where({ workplaceMembershipId })
+    .where({ id: permission.id, workplaceMembershipId: target.id })
     .delete();
 
   await writeAuditLog({
-    organizationId,
+    organizationId: orgId,
     actorUserId: session.userId,
     action: 'ATTENDANCE_EDITOR_REVOKED',
     entityType: 'AttendancePermission',
-    entityId: String(workplaceMembershipId),
+    entityId: String(target.id),
   });
 
-  revalidatePath(`/dashboard/organizations/${organizationId}`);
+  revalidatePath(`/dashboard/organizations/${orgId}/workplaces/${target.workplaceId}`);
+  return { message: 'Attendance Editor disabled.' };
 }

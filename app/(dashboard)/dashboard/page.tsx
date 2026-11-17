@@ -19,7 +19,7 @@ export default async function DashboardPage() {
     orgIds.length,
     orgIds.length > 0
       ? db.orm.public.Workplace
-          .where({ organizationId: { in: orgIds } })
+          .where((workplace) => workplace.organizationId.in(orgIds))
           .select('id')
           .all()
           .then((r) => r.length)
@@ -54,7 +54,7 @@ export default async function DashboardPage() {
 
       {memberships.length === 0 && (
         <div className="mt-8 rounded-lg border border-dashed border-gray-300 bg-white p-8 text-center">
-          <p className="text-sm font-medium text-gray-900">You're not part of any organization yet.</p>
+          <p className="text-sm font-medium text-gray-900">You&apos;re not part of any organization yet.</p>
           <p className="mt-1 text-sm text-gray-500">Create one to get started.</p>
           <Link
             href="/dashboard/organizations"

@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import { isBcryptPasswordLengthValid } from '@/lib/validations/auth';
 
+const IdSchema = z.number().int().positive().safe();
+
 export const CreateOrganizationSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters').max(100).trim(),
 });
@@ -22,6 +24,24 @@ export const UpsertAttendanceSchema = z.object({
   checkInAt: z.string().datetime({ offset: true }),
   checkOutAt: z.string().datetime({ offset: true }).optional().or(z.literal('')),
   notes: z.string().max(500).optional().or(z.literal('')),
+}).refine(
+  ({ checkInAt, checkOutAt }) =>
+    !checkOutAt || new Date(checkOutAt).getTime() > new Date(checkInAt).getTime(),
+  {
+    path: ['checkOutAt'],
+    message: 'Check-out must be later than check-in.',
+  },
+);
+
+export const WorkplaceMemberActionSchema = z.object({
+  workplaceMembershipId: IdSchema,
+  organizationId: IdSchema,
+});
+
+export const AttendanceDeleteSchema = z.object({
+  attendanceId: IdSchema,
+  organizationId: IdSchema,
+  workplaceId: IdSchema,
 });
 
 export const UpdateProfileSchema = z.object({

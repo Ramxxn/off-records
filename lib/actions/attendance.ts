@@ -4,8 +4,13 @@ import { db } from '@/prisma/db';
 import { verifySession } from '@/lib/auth/dal';
 import { getMemberContext, canManageAttendance } from '@/lib/permissions';
 import { writeAuditLog } from '@/lib/utils/audit';
-import { UpsertAttendanceSchema } from '@/lib/validations/app';
+import {
+  AttendanceDeleteSchema,
+  UpsertAttendanceSchema,
+} from '@/lib/validations/app';
 import type { ActionState } from '@/lib/auth/actions';
+
+const positiveId = (value: number) => Number.isSafeInteger(value) && value > 0;
 
 export async function upsertAttendance(
   organizationId: number,
@@ -15,6 +20,13 @@ export async function upsertAttendance(
   formData: FormData,
 ): Promise<ActionState> {
   const session = await verifySession();
+  if (
+    !positiveId(organizationId) ||
+    !positiveId(workplaceId) ||
+    (attendanceId !== null && !positiveId(attendanceId))
+  ) {
+    return { message: 'Invalid attendance selection.' };
+  }
 
   const ctx = await getMemberContext(session.userId, organizationId, workplaceId);
   if (!ctx || !canManageAttendance(ctx)) {
@@ -30,15 +42,21 @@ export async function upsertAttendance(
   if (!parsed.success) return { errors: parsed.error.flatten().fieldErrors };
 
   const { workplaceMembershipId, checkInAt, checkOutAt, notes } = parsed.data;
+  const workplaceMember = await db.orm.public.WorkplaceMembership
+    .where({ id: workplaceMembershipId, organizationId, workplaceId })
+    .select('id')
+    .first();
+  if (!workplaceMember) return { message: 'Employee is not a member of this workplace.' };
 
   if (attendanceId) {
     const existing = await db.orm.public.Attendance
-      .where({ id: attendanceId, workplaceMembershipId })
+      .where({ id: attendanceId, workplaceMembershipId: workplaceMember.id })
       .select('checkInAt', 'checkOutAt', 'notes')
       .first();
+    if (!existing) return { message: 'Attendance record not found.' };
 
     await db.orm.public.Attendance
-      .where({ id: attendanceId })
+      .where({ id: attendanceId, workplaceMembershipId: workplaceMember.id })
       .update({
         checkInAt,
         checkOutAt: checkOutAt || null,
@@ -80,19 +98,44 @@ export async function deleteAttendance(
   workplaceId: number,
 ) {
   const session = await verifySession();
+  const parsed = AttendanceDeleteSchema.safeParse({ attendanceId, organizationId, workplaceId });
+  if (!parsed.success) throw new Error('Invalid attendance selection.');
 
-  const ctx = await getMemberContext(session.userId, organizationId, workplaceId);
+  const {
+    attendanceId: targetAttendanceId,
+    organizationId: orgId,
+    workplaceId: wpId,
+  } = parsed.data;
+  const ctx = await getMemberContext(session.userId, orgId, wpId);
   if (!ctx || !canManageAttendance(ctx)) throw new Error('Forbidden');
 
-  await db.orm.public.Attendance.where({ id: attendanceId }).delete();
+  const attendance = await db.orm.public.Attendance
+    .where({ id: targetAttendanceId })
+    .select('workplaceMembershipId')
+    .first();
+  if (!attendance) throw new Error('Attendance record not found.');
+
+  const workplaceMember = await db.orm.public.WorkplaceMembership
+    .where({
+      id: attendance.workplaceMembershipId,
+      organizationId: orgId,
+      workplaceId: wpId,
+    })
+    .select('id')
+    .first();
+  if (!workplaceMember) throw new Error('Attendance record not found.');
+
+  await db.orm.public.Attendance
+    .where({ id: targetAttendanceId, workplaceMembershipId: workplaceMember.id })
+    .delete();
 
   await writeAuditLog({
-    organizationId,
+    organizationId: orgId,
     actorUserId: session.userId,
     action: 'ATTENDANCE_DELETED',
     entityType: 'Attendance',
-    entityId: String(attendanceId),
+    entityId: String(targetAttendanceId),
   });
 
-  revalidatePath(`/dashboard/organizations/${organizationId}/workplaces/${workplaceId}/attendance`);
+  revalidatePath(`/dashboard/organizations/${orgId}/workplaces/${wpId}/attendance`);
 }

@@ -19,7 +19,7 @@ export default async function OrganizationsPage() {
 
   const organizations = orgIds.length > 0
     ? await db.orm.public.Organization
-        .where({ id: { in: orgIds } })
+        .where((organization) => organization.id.in(orgIds))
         .select('id', 'name', 'createdAt')
         .all()
     : [];
