@@ -587,30 +587,33 @@ These features should not be implemented until the core system is stable.
 ## 24. Current Development Status
 
 ### Completed
-- Phase 1 repository audit completed: README, source structure, dependencies, Prisma contract, environment-variable usage, and current implementation reviewed.
-- Next.js 16.4.0, React 19.3.0, TypeScript, Tailwind CSS 4, and Prisma ORM 8 RC are installed.
+- Phase 1 repository audit completed: README, source structure, dependencies, Prisma contract, migrations, environment-variable usage, and current implementation reviewed. `Document.md` is not present in the repository.
+- Next.js 16.4.6, React 19.3.0, TypeScript, Tailwind CSS 4, and Prisma ORM 8 RC are installed. Next.js and Zod were updated to releases that remediate the reported production advisories.
 - Modular monolith architecture selected.
 - Read-only connectivity check succeeded against PostgreSQL 18.6 (`off_records`).
 - Eight core models are defined in `prisma/contract.prisma`; generated contract artifacts include the current `passwordHash` field.
+- Member removal and attendance-editor grant/revoke actions now validate IDs and scope target memberships to the authorized organization. Attendance create/update/delete paths verify the employee membership belongs to the authorized workplace before mutating records.
+- Restored the workplace member controls and fixed the existing Prisma 8 list-filter syntax and lint error.
+- Session-dependent root and dashboard content is streamed behind Suspense boundaries for Next.js 16 Cache Components.
+- `npm run build`, `npm run lint`, `npx tsc --noEmit`, and all eight focused authentication/action-validation tests pass.
 
 ### In Progress
 - Phase 2: registration/login, bcrypt password hashing, signed expiring sessions, hardened cookies, logout, and current-user checks are implemented. Sessions are stateless JWTs, so logout clears the current browser cookie but does not revoke a copied token; email verification/recovery and authentication rate limiting are also outstanding.
-- Phase 3: complete server-side role, organization/workplace isolation, and attendance-editor authorization.
-- Organization, workplace, membership, and attendance action/page code exists but remains partial; its permissions and end-to-end workflows need completion and tests.
+- Phase 3: complete server-side role, organization/workplace isolation, and attendance-editor authorization. The targeted membership and attendance mutation paths are scoped; remaining read paths and workflows still need a full authorization review and tests.
+- Organization, workplace, membership, and attendance action/page code exists but remains partial; invitations and end-to-end workflows need completion and tests.
 
 ### Not Yet Implemented
-- Complete invitations/member assignment and employee administration.
+- Invitation-based onboarding and complete employee administration.
 - Complete attendance check-in/out, history, summaries, and permission-gated editing.
 - Audit-log views, reports/exports, and platform administration.
-- Remaining dashboard, account-recovery, and production-readiness work.
+- Email verification, account recovery, authentication rate limiting, session revocation, and remaining production-readiness work.
 
 ### Baseline Findings
-- `prisma migration status` reports no migration packages. The live database connection is verified, but this does not confirm that every physical table matches the current contract.
+- `prisma migration status` reports no migration packages. The live database connection is verified, but this does not confirm that every physical table matches the current contract. No database or schema changes were made in this phase.
 - `scripts/migrate-add-password.ts` performs direct SQL DDL and is not a substitute for the Prisma 8 RC contract/migration workflow. Do not use it to modify a database; author and review a migration before applying schema changes.
 - For future schema changes, edit `prisma/contract.prisma`, run `npm run contract:emit`, then author and review a migration with `npx prisma migration plan --name <slug>` before applying it.
-- The current production build is blocked by the missing `member-actions` module imported by the workplace page.
-- TypeScript checking also reports existing query-shape errors in organization/workplace pages. Full lint has one existing unescaped-apostrophe error in the dashboard page; generated Prisma artifacts are excluded from lint.
-- The focused authentication tests pass. Repository-wide build/type-check/lint verification remains blocked by the findings above.
+- `npm audit --omit=dev` reports zero production dependency vulnerabilities. The full audit still reports transitive development-tool advisories in the Prisma Composer/Alchemy dependency tree; resolving all of them currently requires a forced Prisma major-version change, which was not applied.
+- Generated Prisma artifacts remain excluded from lint.
 
 ### Next Step
 Finish Phase 2's remaining session/security requirements and establish a repeatable Prisma migration path before moving on to Phase 3 authorization and tenancy.
