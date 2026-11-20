@@ -140,12 +140,20 @@ export default async function AttendancePage({ params, searchParams }: Props) {
         title="Attendance"
         description={workplace.name}
         action={
-          <Link
-            href={`/dashboard/organizations/${organizationId}/workplaces/${workplaceIdNumber}`}
-            className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-          >
-            Back to workplace
-          </Link>
+          <div className="flex gap-2">
+            <Link
+              href={`/dashboard/organizations/${organizationId}/workplaces/${workplaceIdNumber}/reports`}
+              className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            >
+              Reports
+            </Link>
+            <Link
+              href={`/dashboard/organizations/${organizationId}/workplaces/${workplaceIdNumber}`}
+              className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            >
+              Back to workplace
+            </Link>
+          </div>
         }
       />
 

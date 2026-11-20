@@ -595,18 +595,20 @@ These features should not be implemented until the core system is stable.
 - Member removal and attendance-editor grant/revoke actions now validate IDs and scope target memberships to the authorized organization. Attendance create/update/delete paths verify the employee membership belongs to the authorized workplace before mutating records.
 - Restored the workplace member controls and fixed the existing Prisma 8 list-filter syntax and lint error.
 - Session-dependent root and dashboard content is streamed behind Suspense boundaries for Next.js 16 Cache Components.
-- `npm run build`, `npm run lint`, `npx tsc --noEmit`, and the focused authentication/action-validation suites pass (six auth tests and eight action-validation tests).
+- `npm run build`, `npm run lint`, `npx tsc --noEmit`, and the focused authentication/action-validation suites pass (six auth tests and ten action-validation tests).
 - Phase 1 tenant-access work: employees see only assigned workplaces and their own workplace membership; managers/owners and attendance editors see the roster according to policy. Dashboard workplace totals are scoped to accessible workplaces. Role-policy tests pass.
 - Roadmap Phase 2 attendance workflows: employees can check in/out and review their scoped history; managers, owners, and attendance editors can review rosters, add/correct/delete records, with attendance changes audited atomically.
+- Phase 4 reporting: workplace attendance summaries support validated date ranges of up to 366 days, employee-only self-scoping, and CSV downloads. CSV fields are quoted and spreadsheet formulas neutralized.
+- Organization audit-log views are scoped to the selected organization and limited to the latest 100 events; owners and managers can view them. Platform admins now have read-only organization, user, and cross-organization audit directories, each limited to the latest 100 where applicable.
 
 ### In Progress
-- Phase 3 employee administration: owners can add existing accounts to workplaces, change organization-wide roles, and remove workplace members; role/assignment/removal mutations are authorized and audited transactionally. Invitations are not available yet. Removing a workplace member currently cascades deletion of that member's attendance history.
+- Phase 3 employee administration: owners can add existing accounts to workplaces, change organization-wide roles, and remove workplace members; role/assignment/removal mutations are authorized and audited transactionally. Invitation onboarding and history-preserving offboarding are still outstanding. Removing a workplace member currently cascades deletion of that member's attendance history; avoid destructive removals until a reviewed schema migration preserves it.
 - Authentication baseline: registration/login, bcrypt password hashing, signed expiring sessions, hardened cookies, logout, and current-user checks are implemented. Sessions are stateless JWTs, so logout clears the current browser cookie but does not revoke a copied token; email verification/recovery and authentication rate limiting are outstanding.
+- Platform administration: protected read-only directories and cross-tenant audit review are implemented; administrative mutations and pagination are not.
 
 ### Not Yet Implemented
 - Invitation-based onboarding, non-destructive employee offboarding, and complete employee administration.
-- Attendance summaries and reporting filters.
-- Audit-log views, reports/exports, and platform administration.
+- Report filtering beyond workplace/date range, Excel exports, audit-log pagination, and platform-admin mutations.
 - Email verification, account recovery, authentication rate limiting, session revocation, and remaining production-readiness work.
 
 ### Baseline Findings
@@ -618,14 +620,14 @@ These features should not be implemented until the core system is stable.
 - Generated Prisma artifacts remain excluded from lint.
 
 ### Next Step
-Finish invitation-based onboarding and employee administration, then audit and reporting, and platform administration. Preserve attendance history during offboarding only after a safe contract/migration is ready; finish session revocation, recovery, and rate limiting as part of production hardening.
+Implement invitation-based onboarding and safe employee offboarding through a reviewed contract/migration workflow. Then add report/audit pagination and platform-admin controls; preserve attendance history during offboarding and finish session revocation, recovery, and rate limiting as part of production hardening.
 
 ### Prioritized Roadmap
 1. Tenant-scoped reads and role authorization — completed for organization/workplace roster visibility and the targeted member/attendance mutations; continue expanding tests as new features land.
 2. Attendance — employee check-in/out and history, manager/editor attendance review and correction, audit logging, and validation — completed.
 3. Employee administration — onboarding/invitations, workplace assignment, role management, and removal — in progress.
-4. Audit and reporting — scoped audit-log views, summaries, filters, and CSV export.
-5. Platform and production administration — platform-admin controls, revocable sessions, recovery, rate limiting, and the reviewed Prisma migration workflow.
+4. Audit and reporting — scoped audit-log views, date-filtered attendance summaries, and CSV export implemented; pagination, broader reporting filters, and Excel export remain.
+5. Platform and production administration — read-only platform-admin organization/user/audit screens implemented; mutations, revocable sessions, recovery, rate limiting, and reviewed schema migrations remain.
 
 ---
 

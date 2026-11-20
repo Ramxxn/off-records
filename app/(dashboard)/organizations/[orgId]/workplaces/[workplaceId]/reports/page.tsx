@@ -26,6 +26,14 @@ function hoursBetween(checkInAt: string, checkOutAt: string | null) {
     : null;
 }
 
+function formatUtc(value: string) {
+  return `${new Intl.DateTimeFormat(undefined, {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+    timeZone: 'UTC',
+  }).format(new Date(value))} UTC`;
+}
+
 export default async function AttendanceReportPage({ params, searchParams }: Props) {
   const [{ orgId, workplaceId }, query, user] = await Promise.all([
     params,
@@ -62,16 +70,16 @@ export default async function AttendanceReportPage({ params, searchParams }: Pro
     0,
   );
   const checkedInCount = report.records.filter((record) => record.checkOutAt === null).length;
-  const byEmployee = new Map<string, { name: string; records: number; hours: number }>();
+  const byEmployee = new Map<number, { name: string; records: number; hours: number }>();
   for (const record of report.records) {
-    const employee = byEmployee.get(record.employeeName) ?? {
+    const employee = byEmployee.get(record.workplaceMembershipId) ?? {
       name: record.employeeName,
       records: 0,
       hours: 0,
     };
     employee.records += 1;
     employee.hours += hoursBetween(record.checkInAt, record.checkOutAt) ?? 0;
-    byEmployee.set(record.employeeName, employee);
+    byEmployee.set(record.workplaceMembershipId, employee);
   }
   const exportHref = `/api/organizations/${organizationId}/workplaces/${workplaceIdNumber}/attendance.csv?from=${range.data.from}&to=${range.data.to}`;
 
@@ -160,8 +168,8 @@ export default async function AttendanceReportPage({ params, searchParams }: Pro
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {[...byEmployee.values()].map((employee) => (
-                  <tr key={employee.name}>
+                {[...byEmployee].map(([employeeId, employee]) => (
+                  <tr key={employeeId}>
                     <td className="px-4 py-3 font-medium text-gray-800">{employee.name}</td>
                     <td className="px-4 py-3 text-gray-600">{employee.records}</td>
                     <td className="px-4 py-3 text-gray-600">{employee.hours.toFixed(2)}</td>
@@ -195,10 +203,10 @@ export default async function AttendanceReportPage({ params, searchParams }: Pro
                   <tr key={record.id}>
                     <td className="px-4 py-3 font-medium text-gray-800">{record.employeeName}</td>
                     <td className="whitespace-nowrap px-4 py-3 text-gray-600">
-                      {new Date(record.checkInAt).toLocaleString()}
+                      {formatUtc(record.checkInAt)}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-gray-600">
-                      {record.checkOutAt ? new Date(record.checkOutAt).toLocaleString() : 'In progress'}
+                      {record.checkOutAt ? formatUtc(record.checkOutAt) : 'In progress'}
                     </td>
                     <td className="px-4 py-3 text-gray-600">
                       {hoursBetween(record.checkInAt, record.checkOutAt)?.toFixed(2) ?? '—'}

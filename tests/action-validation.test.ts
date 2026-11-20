@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   AddMemberSchema,
+  AttendanceReportRangeSchema,
   AttendanceSelfActionSchema,
   AttendanceDeleteSchema,
   OrganizationMemberRoleSchema,
@@ -9,12 +10,14 @@ import {
   WorkplaceMemberActionSchema,
 } from '@/lib/validations/app';
 import {
+  canViewAuditLogs,
   canManageAttendance,
   canManageMembers,
   canViewAttendanceRoster,
   canViewOrganizationMembers,
   type MemberContext,
 } from '@/lib/permissions';
+import { attendanceCsv, csvCell } from '@/lib/reports/csv';
 
 function memberContext(
   role: MemberContext['role'],
@@ -140,6 +143,35 @@ test('attendance actions accept form identifiers and reject unsafe selections', 
   );
 });
 
+test('attendance report ranges validate calendar dates and cap ranges at 366 days', () => {
+  assert.equal(
+    AttendanceReportRangeSchema.safeParse({ from: '2026-02-01', to: '2026-02-28' }).success,
+    true,
+  );
+  assert.equal(
+    AttendanceReportRangeSchema.safeParse({ from: '2026-02-30', to: '2026-03-01' }).success,
+    false,
+  );
+  assert.equal(
+    AttendanceReportRangeSchema.safeParse({ from: '2025-01-01', to: '2026-01-02' }).success,
+    false,
+  );
+});
+
+test('attendance CSV escapes cells and neutralizes spreadsheet formulas', () => {
+  assert.equal(csvCell('=SUM(A1:A2)'), '"\'=SUM(A1:A2)"');
+  assert.equal(csvCell('Name, "quoted"'), '"Name, ""quoted"""');
+  assert.match(
+    attendanceCsv([{
+      employeeName: '=HYPERLINK("https://example.test")',
+      checkInAt: '2026-11-20T09:00:00.000Z',
+      checkOutAt: '2026-11-20T17:00:00.000Z',
+      notes: null,
+    }]),
+    /"'=HYPERLINK\(""https:\/\/example\.test""\)"/,
+  );
+});
+
 test('manual attendance rejects malformed datetimes and oversized notes', () => {
   const record = {
     workplaceMembershipId: '4',
@@ -161,6 +193,7 @@ test('employee access stays self-scoped unless Attendance Editor is granted', ()
   assert.equal(canManageAttendance(employee), false);
   assert.equal(canViewAttendanceRoster(employee), false);
   assert.equal(canViewOrganizationMembers(employee), false);
+  assert.equal(canViewAuditLogs(employee), false);
   assert.equal(canManageMembers(employee), false);
 
   const editor = memberContext('EMPLOYEE', true);
@@ -175,9 +208,11 @@ test('managers see rosters but only owners can manage organization members', () 
   assert.equal(canManageAttendance(manager), true);
   assert.equal(canViewAttendanceRoster(manager), true);
   assert.equal(canViewOrganizationMembers(manager), true);
+  assert.equal(canViewAuditLogs(manager), true);
   assert.equal(canManageMembers(manager), false);
 
   const owner = memberContext('OWNER');
   assert.equal(canViewOrganizationMembers(owner), true);
+  assert.equal(canViewAuditLogs(owner), true);
   assert.equal(canManageMembers(owner), true);
 });

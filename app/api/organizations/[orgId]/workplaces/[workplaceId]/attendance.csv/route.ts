@@ -3,12 +3,10 @@ import { getAttendanceReport } from '@/lib/reports/attendance';
 import { attendanceCsv } from '@/lib/reports/csv';
 import { AttendanceReportRangeSchema } from '@/lib/validations/app';
 
-type Props = {
-  params: Promise<{ orgId: string; workplaceId: string }>;
-  request: Request;
-};
-
-export async function GET(request: Request, { params }: Omit<Props, 'request'>) {
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ orgId: string; workplaceId: string }> },
+) {
   const [{ orgId, workplaceId }, user] = await Promise.all([params, getCurrentUser()]);
   if (!user) return new Response('Unauthorized', { status: 401 });
 

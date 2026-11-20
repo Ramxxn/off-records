@@ -7,6 +7,7 @@ import {
   canManageWorkplaces,
   canManageMembers,
   canViewOrganizationMembers,
+  canViewAuditLogs,
 } from '@/lib/permissions';
 import { PageHeader } from '@/components/shared/page-header';
 import { EmptyState } from '@/components/shared/empty-state';
@@ -71,13 +72,26 @@ export default async function OrganizationPage({ params }: Props) {
 
   const isOwner = canManageWorkplaces(ctx);
   const canEditMemberRoles = canManageMembers(ctx);
+  const canReviewAuditLog = canViewAuditLogs(ctx);
 
   return (
     <div className="p-6 sm:p-8 space-y-8">
       <PageHeader
         title={org.name}
         description={`Created ${new Date(org.createdAt).toLocaleDateString()}`}
-        action={isOwner ? <CreateWorkplaceButton organizationId={id} /> : undefined}
+        action={
+          <div className="flex flex-wrap gap-2">
+            {canReviewAuditLog && (
+              <Link
+                href={`/dashboard/organizations/${id}/audit-logs`}
+                className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Audit log
+              </Link>
+            )}
+            {isOwner && <CreateWorkplaceButton organizationId={id} />}
+          </div>
+        }
       />
 
       <section>

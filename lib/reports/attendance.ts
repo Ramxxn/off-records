@@ -54,10 +54,10 @@ export async function getAttendanceReport(
         .select('id', 'name', 'email')
         .all()
     : [];
+  const userById = new Map(users.map((user) => [user.id, user]));
   const userByMembershipId = new Map(
     memberships.map((membership) => {
-      const user = users.find((candidate) => candidate.id === membership.userId);
-      return [membership.id, user];
+      return [membership.id, userById.get(membership.userId)];
     }),
   );
   const membershipByWorkplaceMembershipId = new Map(
