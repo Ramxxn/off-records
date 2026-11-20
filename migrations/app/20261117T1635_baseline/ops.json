@@ -1,0 +1,1396 @@
+[
+  {
+    "id": "schema.public",
+    "label": "Create schema \"public\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres"
+    },
+    "precheck": [],
+    "execute": [
+      {
+        "description": "Create schema \"public\"",
+        "sql": "CREATE SCHEMA IF NOT EXISTS \"public\"",
+        "params": []
+      }
+    ],
+    "postcheck": []
+  },
+  {
+    "id": "table.Attendance",
+    "label": "Create table \"Attendance\"",
+    "summary": "Creates table \"Attendance\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "Attendance"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"Attendance\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Attendance\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"Attendance\"",
+        "sql": "CREATE TABLE \"public\".\"Attendance\" (\n  \"checkInAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"checkOutAt\" timestamptz,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"notes\" text,\n  \"updatedAt\" timestamptz NOT NULL,\n  \"workplaceMembershipId\" int4 NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"Attendance\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Attendance\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.AttendancePermission",
+    "label": "Create table \"AttendancePermission\"",
+    "summary": "Creates table \"AttendancePermission\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "AttendancePermission"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"AttendancePermission\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"AttendancePermission\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"AttendancePermission\"",
+        "sql": "CREATE TABLE \"public\".\"AttendancePermission\" (\n  \"grantedAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"grantedByMembershipId\" int4 NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"workplaceMembershipId\" int4 NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"AttendancePermission\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"AttendancePermission\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.AuditLog",
+    "label": "Create table \"AuditLog\"",
+    "summary": "Creates table \"AuditLog\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "AuditLog"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"AuditLog\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"AuditLog\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"AuditLog\"",
+        "sql": "CREATE TABLE \"public\".\"AuditLog\" (\n  \"action\" text NOT NULL,\n  \"actorUserId\" int4,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"details\" text,\n  \"entityId\" text,\n  \"entityType\" text NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"organizationId\" int4 NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"AuditLog\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"AuditLog\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.Membership",
+    "label": "Create table \"Membership\"",
+    "summary": "Creates table \"Membership\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "Membership"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"Membership\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Membership\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"Membership\"",
+        "sql": "CREATE TABLE \"public\".\"Membership\" (\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"organizationId\" int4 NOT NULL,\n  \"role\" text DEFAULT 'EMPLOYEE' NOT NULL,\n  \"updatedAt\" timestamptz NOT NULL,\n  \"userId\" int4 NOT NULL,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"Membership_role_check_37999223\" CHECK (\"role\" IN ('OWNER', 'MANAGER', 'EMPLOYEE'))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"Membership\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Membership\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.Organization",
+    "label": "Create table \"Organization\"",
+    "summary": "Creates table \"Organization\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "Organization"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"Organization\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Organization\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"Organization\"",
+        "sql": "CREATE TABLE \"public\".\"Organization\" (\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"name\" text NOT NULL,\n  \"updatedAt\" timestamptz NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"Organization\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Organization\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.User",
+    "label": "Create table \"User\"",
+    "summary": "Creates table \"User\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "User"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"User\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"User\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"User\"",
+        "sql": "CREATE TABLE \"public\".\"User\" (\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"email\" text NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"isPlatformAdmin\" bool DEFAULT false NOT NULL,\n  \"name\" text,\n  \"passwordHash\" text NOT NULL,\n  \"updatedAt\" timestamptz NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"User\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"User\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.Workplace",
+    "label": "Create table \"Workplace\"",
+    "summary": "Creates table \"Workplace\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "Workplace"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"Workplace\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Workplace\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"Workplace\"",
+        "sql": "CREATE TABLE \"public\".\"Workplace\" (\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"name\" text NOT NULL,\n  \"organizationId\" int4 NOT NULL,\n  \"updatedAt\" timestamptz NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"Workplace\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Workplace\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.WorkplaceMembership",
+    "label": "Create table \"WorkplaceMembership\"",
+    "summary": "Creates table \"WorkplaceMembership\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "WorkplaceMembership"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"WorkplaceMembership\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"WorkplaceMembership\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"WorkplaceMembership\"",
+        "sql": "CREATE TABLE \"public\".\"WorkplaceMembership\" (\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"membershipId\" int4 NOT NULL,\n  \"organizationId\" int4 NOT NULL,\n  \"workplaceId\" int4 NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"WorkplaceMembership\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"WorkplaceMembership\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.AttendancePermission.AttendancePermission_workplaceMembershipId_key",
+    "label": "Add unique constraint on \"AttendancePermission\" (workplaceMembershipId)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "AttendancePermission_workplaceMembershipId_key",
+        "table": "AttendancePermission"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"AttendancePermission_workplaceMembershipId_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "AttendancePermission_workplaceMembershipId_key",
+          "public",
+          "\"public\".\"AttendancePermission\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"AttendancePermission_workplaceMembershipId_key\"",
+        "sql": "ALTER TABLE \"public\".\"AttendancePermission\" ADD CONSTRAINT \"AttendancePermission_workplaceMembershipId_key\" UNIQUE (\"workplaceMembershipId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"AttendancePermission_workplaceMembershipId_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "AttendancePermission_workplaceMembershipId_key",
+          "public",
+          "\"public\".\"AttendancePermission\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.Membership.Membership_userId_organizationId_key",
+    "label": "Add unique constraint on \"Membership\" (userId, organizationId)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "Membership_userId_organizationId_key",
+        "table": "Membership"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"Membership_userId_organizationId_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Membership_userId_organizationId_key",
+          "public",
+          "\"public\".\"Membership\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"Membership_userId_organizationId_key\"",
+        "sql": "ALTER TABLE \"public\".\"Membership\" ADD CONSTRAINT \"Membership_userId_organizationId_key\" UNIQUE (\"userId\", \"organizationId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"Membership_userId_organizationId_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Membership_userId_organizationId_key",
+          "public",
+          "\"public\".\"Membership\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.Membership.Membership_id_organizationId_key",
+    "label": "Add unique constraint on \"Membership\" (id, organizationId)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "Membership_id_organizationId_key",
+        "table": "Membership"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"Membership_id_organizationId_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Membership_id_organizationId_key",
+          "public",
+          "\"public\".\"Membership\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"Membership_id_organizationId_key\"",
+        "sql": "ALTER TABLE \"public\".\"Membership\" ADD CONSTRAINT \"Membership_id_organizationId_key\" UNIQUE (\"id\", \"organizationId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"Membership_id_organizationId_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Membership_id_organizationId_key",
+          "public",
+          "\"public\".\"Membership\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.User.User_email_key",
+    "label": "Add unique constraint on \"User\" (email)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "User_email_key",
+        "table": "User"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"User_email_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "User_email_key",
+          "public",
+          "\"public\".\"User\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"User_email_key\"",
+        "sql": "ALTER TABLE \"public\".\"User\" ADD CONSTRAINT \"User_email_key\" UNIQUE (\"email\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"User_email_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "User_email_key",
+          "public",
+          "\"public\".\"User\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.Workplace.Workplace_organizationId_name_key",
+    "label": "Add unique constraint on \"Workplace\" (organizationId, name)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "Workplace_organizationId_name_key",
+        "table": "Workplace"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"Workplace_organizationId_name_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Workplace_organizationId_name_key",
+          "public",
+          "\"public\".\"Workplace\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"Workplace_organizationId_name_key\"",
+        "sql": "ALTER TABLE \"public\".\"Workplace\" ADD CONSTRAINT \"Workplace_organizationId_name_key\" UNIQUE (\"organizationId\", \"name\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"Workplace_organizationId_name_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Workplace_organizationId_name_key",
+          "public",
+          "\"public\".\"Workplace\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.Workplace.Workplace_id_organizationId_key",
+    "label": "Add unique constraint on \"Workplace\" (id, organizationId)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "Workplace_id_organizationId_key",
+        "table": "Workplace"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"Workplace_id_organizationId_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Workplace_id_organizationId_key",
+          "public",
+          "\"public\".\"Workplace\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"Workplace_id_organizationId_key\"",
+        "sql": "ALTER TABLE \"public\".\"Workplace\" ADD CONSTRAINT \"Workplace_id_organizationId_key\" UNIQUE (\"id\", \"organizationId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"Workplace_id_organizationId_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Workplace_id_organizationId_key",
+          "public",
+          "\"public\".\"Workplace\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.WorkplaceMembership.WorkplaceMembership_membershipId_workplaceId_key",
+    "label": "Add unique constraint on \"WorkplaceMembership\" (membershipId, workplaceId)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "WorkplaceMembership_membershipId_workplaceId_key",
+        "table": "WorkplaceMembership"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"WorkplaceMembership_membershipId_workplaceId_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "WorkplaceMembership_membershipId_workplaceId_key",
+          "public",
+          "\"public\".\"WorkplaceMembership\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"WorkplaceMembership_membershipId_workplaceId_key\"",
+        "sql": "ALTER TABLE \"public\".\"WorkplaceMembership\" ADD CONSTRAINT \"WorkplaceMembership_membershipId_workplaceId_key\" UNIQUE (\"membershipId\", \"workplaceId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"WorkplaceMembership_membershipId_workplaceId_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "WorkplaceMembership_membershipId_workplaceId_key",
+          "public",
+          "\"public\".\"WorkplaceMembership\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.Attendance.Attendance_workplaceMembershipId_idx_ce289ab8",
+    "label": "Create index \"Attendance_workplaceMembershipId_idx_ce289ab8\" on \"Attendance\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "Attendance_workplaceMembershipId_idx_ce289ab8",
+        "table": "Attendance"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"Attendance_workplaceMembershipId_idx_ce289ab8\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Attendance_workplaceMembershipId_idx_ce289ab8\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"Attendance_workplaceMembershipId_idx_ce289ab8\"",
+        "sql": "CREATE INDEX \"Attendance_workplaceMembershipId_idx_ce289ab8\" ON \"public\".\"Attendance\" (\"workplaceMembershipId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"Attendance_workplaceMembershipId_idx_ce289ab8\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Attendance_workplaceMembershipId_idx_ce289ab8\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.AttendancePermission.AttendancePermission_grantedByMembershipId_idx_8d92d1d7",
+    "label": "Create index \"AttendancePermission_grantedByMembershipId_idx_8d92d1d7\" on \"AttendancePermission\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "AttendancePermission_grantedByMembershipId_idx_8d92d1d7",
+        "table": "AttendancePermission"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"AttendancePermission_grantedByMembershipId_idx_8d92d1d7\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"AttendancePermission_grantedByMembershipId_idx_8d92d1d7\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"AttendancePermission_grantedByMembershipId_idx_8d92d1d7\"",
+        "sql": "CREATE INDEX \"AttendancePermission_grantedByMembershipId_idx_8d92d1d7\" ON \"public\".\"AttendancePermission\" (\"grantedByMembershipId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"AttendancePermission_grantedByMembershipId_idx_8d92d1d7\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"AttendancePermission_grantedByMembershipId_idx_8d92d1d7\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.AuditLog.AuditLog_actorUserId_idx_96dac96c",
+    "label": "Create index \"AuditLog_actorUserId_idx_96dac96c\" on \"AuditLog\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "AuditLog_actorUserId_idx_96dac96c",
+        "table": "AuditLog"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"AuditLog_actorUserId_idx_96dac96c\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"AuditLog_actorUserId_idx_96dac96c\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"AuditLog_actorUserId_idx_96dac96c\"",
+        "sql": "CREATE INDEX \"AuditLog_actorUserId_idx_96dac96c\" ON \"public\".\"AuditLog\" (\"actorUserId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"AuditLog_actorUserId_idx_96dac96c\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"AuditLog_actorUserId_idx_96dac96c\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.AuditLog.AuditLog_organizationId_idx_2e17ef41",
+    "label": "Create index \"AuditLog_organizationId_idx_2e17ef41\" on \"AuditLog\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "AuditLog_organizationId_idx_2e17ef41",
+        "table": "AuditLog"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"AuditLog_organizationId_idx_2e17ef41\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"AuditLog_organizationId_idx_2e17ef41\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"AuditLog_organizationId_idx_2e17ef41\"",
+        "sql": "CREATE INDEX \"AuditLog_organizationId_idx_2e17ef41\" ON \"public\".\"AuditLog\" (\"organizationId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"AuditLog_organizationId_idx_2e17ef41\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"AuditLog_organizationId_idx_2e17ef41\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.Membership.Membership_organizationId_idx_2e17ef41",
+    "label": "Create index \"Membership_organizationId_idx_2e17ef41\" on \"Membership\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "Membership_organizationId_idx_2e17ef41",
+        "table": "Membership"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"Membership_organizationId_idx_2e17ef41\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Membership_organizationId_idx_2e17ef41\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"Membership_organizationId_idx_2e17ef41\"",
+        "sql": "CREATE INDEX \"Membership_organizationId_idx_2e17ef41\" ON \"public\".\"Membership\" (\"organizationId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"Membership_organizationId_idx_2e17ef41\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Membership_organizationId_idx_2e17ef41\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.Membership.Membership_userId_idx_a489d58a",
+    "label": "Create index \"Membership_userId_idx_a489d58a\" on \"Membership\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "Membership_userId_idx_a489d58a",
+        "table": "Membership"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"Membership_userId_idx_a489d58a\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Membership_userId_idx_a489d58a\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"Membership_userId_idx_a489d58a\"",
+        "sql": "CREATE INDEX \"Membership_userId_idx_a489d58a\" ON \"public\".\"Membership\" (\"userId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"Membership_userId_idx_a489d58a\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Membership_userId_idx_a489d58a\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.Workplace.Workplace_organizationId_idx_2e17ef41",
+    "label": "Create index \"Workplace_organizationId_idx_2e17ef41\" on \"Workplace\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "Workplace_organizationId_idx_2e17ef41",
+        "table": "Workplace"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"Workplace_organizationId_idx_2e17ef41\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Workplace_organizationId_idx_2e17ef41\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"Workplace_organizationId_idx_2e17ef41\"",
+        "sql": "CREATE INDEX \"Workplace_organizationId_idx_2e17ef41\" ON \"public\".\"Workplace\" (\"organizationId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"Workplace_organizationId_idx_2e17ef41\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Workplace_organizationId_idx_2e17ef41\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.WorkplaceMembership.WorkplaceMembership_membershipId_organizationId_idx_fe5710e2",
+    "label": "Create index \"WorkplaceMembership_membershipId_organizationId_idx_fe5710e2\" on \"WorkplaceMembership\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "WorkplaceMembership_membershipId_organizationId_idx_fe5710e2",
+        "table": "WorkplaceMembership"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"WorkplaceMembership_membershipId_organizationId_idx_fe5710e2\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"WorkplaceMembership_membershipId_organizationId_idx_fe5710e2\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"WorkplaceMembership_membershipId_organizationId_idx_fe5710e2\"",
+        "sql": "CREATE INDEX \"WorkplaceMembership_membershipId_organizationId_idx_fe5710e2\" ON \"public\".\"WorkplaceMembership\" (\"membershipId\", \"organizationId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"WorkplaceMembership_membershipId_organizationId_idx_fe5710e2\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"WorkplaceMembership_membershipId_organizationId_idx_fe5710e2\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.WorkplaceMembership.WorkplaceMembership_workplaceId_organizationId_idx_2418b39b",
+    "label": "Create index \"WorkplaceMembership_workplaceId_organizationId_idx_2418b39b\" on \"WorkplaceMembership\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "WorkplaceMembership_workplaceId_organizationId_idx_2418b39b",
+        "table": "WorkplaceMembership"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"WorkplaceMembership_workplaceId_organizationId_idx_2418b39b\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"WorkplaceMembership_workplaceId_organizationId_idx_2418b39b\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"WorkplaceMembership_workplaceId_organizationId_idx_2418b39b\"",
+        "sql": "CREATE INDEX \"WorkplaceMembership_workplaceId_organizationId_idx_2418b39b\" ON \"public\".\"WorkplaceMembership\" (\"workplaceId\", \"organizationId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"WorkplaceMembership_workplaceId_organizationId_idx_2418b39b\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"WorkplaceMembership_workplaceId_organizationId_idx_2418b39b\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.Attendance.Attendance_workplaceMembershipId_fkey",
+    "label": "Add foreign key \"Attendance_workplaceMembershipId_fkey\" on \"Attendance\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "Attendance_workplaceMembershipId_fkey",
+        "table": "Attendance"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"Attendance_workplaceMembershipId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Attendance_workplaceMembershipId_fkey",
+          "public",
+          "\"public\".\"Attendance\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"Attendance_workplaceMembershipId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"Attendance\"\nADD CONSTRAINT \"Attendance_workplaceMembershipId_fkey\"\nFOREIGN KEY (\"workplaceMembershipId\")\nREFERENCES \"public\".\"WorkplaceMembership\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"Attendance_workplaceMembershipId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Attendance_workplaceMembershipId_fkey",
+          "public",
+          "\"public\".\"Attendance\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.AttendancePermission.AttendancePermission_workplaceMembershipId_fkey",
+    "label": "Add foreign key \"AttendancePermission_workplaceMembershipId_fkey\" on \"AttendancePermission\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "AttendancePermission_workplaceMembershipId_fkey",
+        "table": "AttendancePermission"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"AttendancePermission_workplaceMembershipId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "AttendancePermission_workplaceMembershipId_fkey",
+          "public",
+          "\"public\".\"AttendancePermission\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"AttendancePermission_workplaceMembershipId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"AttendancePermission\"\nADD CONSTRAINT \"AttendancePermission_workplaceMembershipId_fkey\"\nFOREIGN KEY (\"workplaceMembershipId\")\nREFERENCES \"public\".\"WorkplaceMembership\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"AttendancePermission_workplaceMembershipId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "AttendancePermission_workplaceMembershipId_fkey",
+          "public",
+          "\"public\".\"AttendancePermission\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.AttendancePermission.AttendancePermission_grantedByMembershipId_fkey",
+    "label": "Add foreign key \"AttendancePermission_grantedByMembershipId_fkey\" on \"AttendancePermission\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "AttendancePermission_grantedByMembershipId_fkey",
+        "table": "AttendancePermission"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"AttendancePermission_grantedByMembershipId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "AttendancePermission_grantedByMembershipId_fkey",
+          "public",
+          "\"public\".\"AttendancePermission\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"AttendancePermission_grantedByMembershipId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"AttendancePermission\"\nADD CONSTRAINT \"AttendancePermission_grantedByMembershipId_fkey\"\nFOREIGN KEY (\"grantedByMembershipId\")\nREFERENCES \"public\".\"Membership\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"AttendancePermission_grantedByMembershipId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "AttendancePermission_grantedByMembershipId_fkey",
+          "public",
+          "\"public\".\"AttendancePermission\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.AuditLog.AuditLog_organizationId_fkey",
+    "label": "Add foreign key \"AuditLog_organizationId_fkey\" on \"AuditLog\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "AuditLog_organizationId_fkey",
+        "table": "AuditLog"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"AuditLog_organizationId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "AuditLog_organizationId_fkey",
+          "public",
+          "\"public\".\"AuditLog\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"AuditLog_organizationId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"AuditLog\"\nADD CONSTRAINT \"AuditLog_organizationId_fkey\"\nFOREIGN KEY (\"organizationId\")\nREFERENCES \"public\".\"Organization\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"AuditLog_organizationId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "AuditLog_organizationId_fkey",
+          "public",
+          "\"public\".\"AuditLog\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.AuditLog.AuditLog_actorUserId_fkey",
+    "label": "Add foreign key \"AuditLog_actorUserId_fkey\" on \"AuditLog\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "AuditLog_actorUserId_fkey",
+        "table": "AuditLog"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"AuditLog_actorUserId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "AuditLog_actorUserId_fkey",
+          "public",
+          "\"public\".\"AuditLog\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"AuditLog_actorUserId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"AuditLog\"\nADD CONSTRAINT \"AuditLog_actorUserId_fkey\"\nFOREIGN KEY (\"actorUserId\")\nREFERENCES \"public\".\"User\" (\"id\")\nON DELETE SET NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"AuditLog_actorUserId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "AuditLog_actorUserId_fkey",
+          "public",
+          "\"public\".\"AuditLog\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.Membership.Membership_userId_fkey",
+    "label": "Add foreign key \"Membership_userId_fkey\" on \"Membership\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "Membership_userId_fkey",
+        "table": "Membership"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"Membership_userId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Membership_userId_fkey",
+          "public",
+          "\"public\".\"Membership\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"Membership_userId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"Membership\"\nADD CONSTRAINT \"Membership_userId_fkey\"\nFOREIGN KEY (\"userId\")\nREFERENCES \"public\".\"User\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"Membership_userId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Membership_userId_fkey",
+          "public",
+          "\"public\".\"Membership\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.Membership.Membership_organizationId_fkey",
+    "label": "Add foreign key \"Membership_organizationId_fkey\" on \"Membership\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "Membership_organizationId_fkey",
+        "table": "Membership"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"Membership_organizationId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Membership_organizationId_fkey",
+          "public",
+          "\"public\".\"Membership\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"Membership_organizationId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"Membership\"\nADD CONSTRAINT \"Membership_organizationId_fkey\"\nFOREIGN KEY (\"organizationId\")\nREFERENCES \"public\".\"Organization\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"Membership_organizationId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Membership_organizationId_fkey",
+          "public",
+          "\"public\".\"Membership\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.Workplace.Workplace_organizationId_fkey",
+    "label": "Add foreign key \"Workplace_organizationId_fkey\" on \"Workplace\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "Workplace_organizationId_fkey",
+        "table": "Workplace"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"Workplace_organizationId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Workplace_organizationId_fkey",
+          "public",
+          "\"public\".\"Workplace\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"Workplace_organizationId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"Workplace\"\nADD CONSTRAINT \"Workplace_organizationId_fkey\"\nFOREIGN KEY (\"organizationId\")\nREFERENCES \"public\".\"Organization\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"Workplace_organizationId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Workplace_organizationId_fkey",
+          "public",
+          "\"public\".\"Workplace\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.WorkplaceMembership.WorkplaceMembership_membershipId_organizationId_fkey",
+    "label": "Add foreign key \"WorkplaceMembership_membershipId_organizationId_fkey\" on \"WorkplaceMembership\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "WorkplaceMembership_membershipId_organizationId_fkey",
+        "table": "WorkplaceMembership"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"WorkplaceMembership_membershipId_organizationId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "WorkplaceMembership_membershipId_organizationId_fkey",
+          "public",
+          "\"public\".\"WorkplaceMembership\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"WorkplaceMembership_membershipId_organizationId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"WorkplaceMembership\"\nADD CONSTRAINT \"WorkplaceMembership_membershipId_organizationId_fkey\"\nFOREIGN KEY (\"membershipId\", \"organizationId\")\nREFERENCES \"public\".\"Membership\" (\"id\", \"organizationId\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"WorkplaceMembership_membershipId_organizationId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "WorkplaceMembership_membershipId_organizationId_fkey",
+          "public",
+          "\"public\".\"WorkplaceMembership\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.WorkplaceMembership.WorkplaceMembership_workplaceId_organizationId_fkey",
+    "label": "Add foreign key \"WorkplaceMembership_workplaceId_organizationId_fkey\" on \"WorkplaceMembership\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "WorkplaceMembership_workplaceId_organizationId_fkey",
+        "table": "WorkplaceMembership"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"WorkplaceMembership_workplaceId_organizationId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "WorkplaceMembership_workplaceId_organizationId_fkey",
+          "public",
+          "\"public\".\"WorkplaceMembership\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"WorkplaceMembership_workplaceId_organizationId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"WorkplaceMembership\"\nADD CONSTRAINT \"WorkplaceMembership_workplaceId_organizationId_fkey\"\nFOREIGN KEY (\"workplaceId\", \"organizationId\")\nREFERENCES \"public\".\"Workplace\" (\"id\", \"organizationId\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"WorkplaceMembership_workplaceId_organizationId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "WorkplaceMembership_workplaceId_organizationId_fkey",
+          "public",
+          "\"public\".\"WorkplaceMembership\""
+        ]
+      }
+    ]
+  }
+]

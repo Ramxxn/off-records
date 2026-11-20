@@ -2,11 +2,17 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { getCurrentUser } from '@/lib/auth/dal';
 import { db } from '@/prisma/db';
-import { getMemberContext, canManageWorkplaces } from '@/lib/permissions';
+import {
+  getMemberContext,
+  canManageWorkplaces,
+  canManageMembers,
+  canViewOrganizationMembers,
+} from '@/lib/permissions';
 import { PageHeader } from '@/components/shared/page-header';
 import { EmptyState } from '@/components/shared/empty-state';
 import { Badge } from '@/components/shared/badge';
 import { CreateWorkplaceButton } from './create-workplace-button';
+import { MemberRoleForm } from './member-role-form';
 
 type Props = { params: Promise<{ orgId: string }> };
 
@@ -25,15 +31,34 @@ export default async function OrganizationPage({ params }: Props) {
 
   if (!org || !ctx) notFound();
 
-  const workplaces = await db.orm.public.Workplace
-    .where({ organizationId: id })
-    .select('id', 'name', 'createdAt')
-    .all();
-
-  const memberships = await db.orm.public.Membership
-    .where({ organizationId: id })
-    .select('id', 'role', 'userId')
-    .all();
+  const canViewMembers = canViewOrganizationMembers(ctx);
+  const [workplaces, memberships] = await Promise.all([
+    ctx.role === 'EMPLOYEE'
+      ? db.orm.public.WorkplaceMembership
+          .where({ membershipId: ctx.membershipId, organizationId: id })
+          .select('workplaceId')
+          .all()
+          .then(async (workplaceMemberships) => {
+            const workplaceIds = workplaceMemberships.map((membership) => membership.workplaceId);
+            return workplaceIds.length > 0
+              ? db.orm.public.Workplace
+                  .where((workplace) => workplace.id.in(workplaceIds))
+                  .where({ organizationId: id })
+                  .select('id', 'name', 'createdAt')
+                  .all()
+              : [];
+          })
+      : db.orm.public.Workplace
+          .where({ organizationId: id })
+          .select('id', 'name', 'createdAt')
+          .all(),
+    canViewMembers
+      ? db.orm.public.Membership
+          .where({ organizationId: id })
+          .select('id', 'role', 'userId')
+          .all()
+      : [],
+  ]);
 
   const userIds = memberships.map((m) => m.userId);
   const users = userIds.length > 0
@@ -45,6 +70,7 @@ export default async function OrganizationPage({ params }: Props) {
   const userMap = Object.fromEntries(users.map((u) => [u.id, u]));
 
   const isOwner = canManageWorkplaces(ctx);
+  const canEditMemberRoles = canManageMembers(ctx);
 
   return (
     <div className="p-6 sm:p-8 space-y-8">
@@ -81,25 +107,40 @@ export default async function OrganizationPage({ params }: Props) {
         )}
       </section>
 
-      <section>
-        <h2 className="mb-3 text-sm font-semibold text-gray-700">Members</h2>
-        <ul className="divide-y divide-gray-100 rounded-lg border border-gray-200 bg-white shadow-sm">
-          {memberships.map((m) => {
-            const u = userMap[m.userId];
-            return (
-              <li key={m.id} className="flex items-center justify-between px-5 py-3">
-                <div>
-                  <p className="text-sm font-medium text-gray-900">{u?.name ?? u?.email ?? '—'}</p>
-                  <p className="text-xs text-gray-500">{u?.email}</p>
-                </div>
-                <Badge variant={m.role === 'OWNER' ? 'info' : m.role === 'MANAGER' ? 'warning' : 'default'}>
-                  {m.role}
-                </Badge>
-              </li>
-            );
-          })}
-        </ul>
-      </section>
+      {canViewMembers && (
+        <section>
+          <h2 className="mb-3 text-sm font-semibold text-gray-700">Members</h2>
+          <ul className="divide-y divide-gray-100 rounded-lg border border-gray-200 bg-white shadow-sm">
+            {memberships.map((m) => {
+              const u = userMap[m.userId];
+              return (
+                <li
+                  key={m.id}
+                  className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">{u?.name ?? u?.email ?? '—'}</p>
+                    <p className="text-xs text-gray-500">{u?.email}</p>
+                  </div>
+                  <div className="flex flex-wrap items-center justify-end gap-2">
+                    <Badge variant={m.role === 'OWNER' ? 'info' : m.role === 'MANAGER' ? 'warning' : 'default'}>
+                      {m.role}
+                    </Badge>
+                    {canEditMemberRoles && (
+                      <MemberRoleForm
+                        membershipId={m.id}
+                        organizationId={id}
+                        memberName={u?.name ?? u?.email ?? 'member'}
+                        role={m.role}
+                      />
+                    )}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
     </div>
   );
 }

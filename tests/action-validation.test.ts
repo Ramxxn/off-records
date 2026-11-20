@@ -1,10 +1,33 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
+  AddMemberSchema,
+  AttendanceSelfActionSchema,
   AttendanceDeleteSchema,
+  OrganizationMemberRoleSchema,
   UpsertAttendanceSchema,
   WorkplaceMemberActionSchema,
 } from '@/lib/validations/app';
+import {
+  canManageAttendance,
+  canManageMembers,
+  canViewAttendanceRoster,
+  canViewOrganizationMembers,
+  type MemberContext,
+} from '@/lib/permissions';
+
+function memberContext(
+  role: MemberContext['role'],
+  isAttendanceEditor = false,
+): MemberContext {
+  return {
+    membershipId: 1,
+    organizationId: 1,
+    role,
+    workplaceMembershipId: 1,
+    isAttendanceEditor,
+  };
+}
 
 test('member actions require positive safe integer identifiers', () => {
   assert.equal(
@@ -31,6 +54,52 @@ test('member actions require positive safe integer identifiers', () => {
   );
 });
 
+test('organization role changes accept only a valid member, tenant, and role', () => {
+  assert.equal(
+    OrganizationMemberRoleSchema.safeParse({
+      membershipId: 1,
+      organizationId: 2,
+      role: 'MANAGER',
+    }).success,
+    true,
+  );
+  assert.equal(
+    OrganizationMemberRoleSchema.safeParse({
+      membershipId: 1,
+      organizationId: 2,
+      role: 'PLATFORM_ADMIN',
+    }).success,
+    false,
+  );
+  assert.equal(
+    OrganizationMemberRoleSchema.safeParse({
+      membershipId: 0,
+      organizationId: 2,
+      role: 'EMPLOYEE',
+    }).success,
+    false,
+  );
+});
+
+test('workplace assignment normalizes email and requires safe tenant identifiers', () => {
+  const parsed = AddMemberSchema.safeParse({
+    email: '  WORKER@EXAMPLE.COM ',
+    organizationId: '4',
+    workplaceId: '9',
+  });
+  assert.equal(parsed.success, true);
+  if (parsed.success) assert.equal(parsed.data.email, 'worker@example.com');
+
+  assert.equal(
+    AddMemberSchema.safeParse({
+      email: 'worker@example.com',
+      organizationId: '9007199254740992',
+      workplaceId: '9',
+    }).success,
+    false,
+  );
+});
+
 test('attendance checkout must be later than check-in', () => {
   const record = {
     workplaceMembershipId: '4',
@@ -45,4 +114,70 @@ test('attendance checkout must be later than check-in', () => {
     }).success,
     false,
   );
+});
+
+test('attendance actions accept form identifiers and reject unsafe selections', () => {
+  assert.equal(
+    AttendanceSelfActionSchema.safeParse({
+      organizationId: '4',
+      workplaceId: '9',
+    }).success,
+    true,
+  );
+  assert.equal(
+    AttendanceSelfActionSchema.safeParse({
+      organizationId: '4',
+      workplaceId: '-1',
+    }).success,
+    false,
+  );
+  assert.equal(
+    AttendanceSelfActionSchema.safeParse({
+      organizationId: '9007199254740992',
+      workplaceId: '9',
+    }).success,
+    false,
+  );
+});
+
+test('manual attendance rejects malformed datetimes and oversized notes', () => {
+  const record = {
+    workplaceMembershipId: '4',
+    checkInAt: '2026-11-17T09:00:00.000Z',
+  };
+  assert.equal(UpsertAttendanceSchema.safeParse(record).success, true);
+  assert.equal(
+    UpsertAttendanceSchema.safeParse({ ...record, checkInAt: 'tomorrow morning' }).success,
+    false,
+  );
+  assert.equal(
+    UpsertAttendanceSchema.safeParse({ ...record, notes: 'x'.repeat(501) }).success,
+    false,
+  );
+});
+
+test('employee access stays self-scoped unless Attendance Editor is granted', () => {
+  const employee = memberContext('EMPLOYEE');
+  assert.equal(canManageAttendance(employee), false);
+  assert.equal(canViewAttendanceRoster(employee), false);
+  assert.equal(canViewOrganizationMembers(employee), false);
+  assert.equal(canManageMembers(employee), false);
+
+  const editor = memberContext('EMPLOYEE', true);
+  assert.equal(canManageAttendance(editor), true);
+  assert.equal(canViewAttendanceRoster(editor), true);
+  assert.equal(canViewOrganizationMembers(editor), false);
+  assert.equal(canManageMembers(editor), false);
+});
+
+test('managers see rosters but only owners can manage organization members', () => {
+  const manager = memberContext('MANAGER');
+  assert.equal(canManageAttendance(manager), true);
+  assert.equal(canViewAttendanceRoster(manager), true);
+  assert.equal(canViewOrganizationMembers(manager), true);
+  assert.equal(canManageMembers(manager), false);
+
+  const owner = memberContext('OWNER');
+  assert.equal(canViewOrganizationMembers(owner), true);
+  assert.equal(canManageMembers(owner), true);
 });

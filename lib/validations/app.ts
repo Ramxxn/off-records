@@ -13,10 +13,15 @@ export const CreateWorkplaceSchema = z.object({
 });
 
 export const AddMemberSchema = z.object({
-  email: z.string().email('Invalid email address').trim().toLowerCase(),
-  role: z.enum(['MANAGER', 'EMPLOYEE']),
-  organizationId: z.coerce.number().int().positive(),
-  workplaceId: z.coerce.number().int().positive(),
+  email: z.string().trim().toLowerCase().email('Invalid email address'),
+  organizationId: z.coerce.number().int().positive().safe(),
+  workplaceId: z.coerce.number().int().positive().safe(),
+});
+
+export const OrganizationMemberRoleSchema = z.object({
+  membershipId: IdSchema,
+  organizationId: IdSchema,
+  role: z.enum(['OWNER', 'MANAGER', 'EMPLOYEE']),
 });
 
 export const UpsertAttendanceSchema = z.object({
@@ -43,6 +48,26 @@ export const AttendanceDeleteSchema = z.object({
   organizationId: IdSchema,
   workplaceId: IdSchema,
 });
+
+export const AttendanceSelfActionSchema = z.object({
+  organizationId: z.coerce.number().int().positive().safe(),
+  workplaceId: z.coerce.number().int().positive().safe(),
+});
+
+export const AttendanceReportRangeSchema = z.object({
+  from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Enter a valid start date.'),
+  to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Enter a valid end date.'),
+}).refine(
+  ({ from, to }) => {
+    const start = new Date(`${from}T00:00:00.000Z`);
+    const end = new Date(`${to}T00:00:00.000Z`);
+    const days = (end.getTime() - start.getTime()) / 86_400_000;
+    return Number.isFinite(days) && days >= 0 && days <= 365
+      && start.toISOString().slice(0, 10) === from
+      && end.toISOString().slice(0, 10) === to;
+  },
+  { path: ['to'], message: 'Choose a valid range of no more than 366 days.' },
+);
 
 export const UpdateProfileSchema = z.object({
   name: z.string().trim().min(2).max(100),

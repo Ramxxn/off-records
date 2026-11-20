@@ -5,6 +5,7 @@ export type MemberContext = {
   membershipId: number;
   organizationId: number;
   role: 'OWNER' | 'MANAGER' | 'EMPLOYEE';
+  workplaceMembershipId: number | null;
   isAttendanceEditor: boolean;
 };
 
@@ -20,15 +21,20 @@ export async function getMemberContext(
 
   if (!membership) return null;
 
+  let workplaceMembershipId: number | null = null;
   let isAttendanceEditor = false;
-  if (workplaceId) {
-    const wm = await db.orm.public.WorkplaceMembership
-      .where({ membershipId: membership.id, workplaceId })
+  if (workplaceId !== undefined) {
+    const workplaceMembership = await db.orm.public.WorkplaceMembership
+      .where({ membershipId: membership.id, workplaceId, organizationId })
       .select('id')
       .first();
-    if (wm) {
+    workplaceMembershipId = workplaceMembership?.id ?? null;
+
+    if (!workplaceMembership && membership.role === 'EMPLOYEE') return null;
+
+    if (workplaceMembership) {
       const perm = await db.orm.public.AttendancePermission
-        .where({ workplaceMembershipId: wm.id })
+        .where({ workplaceMembershipId: workplaceMembership.id })
         .select('id')
         .first();
       isAttendanceEditor = !!perm;
@@ -39,6 +45,7 @@ export async function getMemberContext(
     membershipId: membership.id,
     organizationId,
     role: membership.role as MemberContext['role'],
+    workplaceMembershipId,
     isAttendanceEditor,
   };
 }
@@ -49,6 +56,18 @@ export function canManageAttendance(ctx: MemberContext): boolean {
 
 export function canManageMembers(ctx: MemberContext): boolean {
   return ctx.role === 'OWNER';
+}
+
+export function canViewOrganizationMembers(ctx: MemberContext): boolean {
+  return ctx.role === 'OWNER' || ctx.role === 'MANAGER';
+}
+
+export function canViewAuditLogs(ctx: MemberContext): boolean {
+  return ctx.role === 'OWNER' || ctx.role === 'MANAGER';
+}
+
+export function canViewAttendanceRoster(ctx: MemberContext): boolean {
+  return ctx.role === 'OWNER' || ctx.role === 'MANAGER' || ctx.isAttendanceEditor;
 }
 
 export function canManageWorkplaces(ctx: MemberContext): boolean {

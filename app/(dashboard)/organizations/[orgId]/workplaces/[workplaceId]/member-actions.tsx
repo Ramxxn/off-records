@@ -33,7 +33,11 @@ export function MemberActions({
   }
 
   function confirmRemoval() {
-    if (window.confirm('Remove this member from the workplace?')) {
+    if (
+      window.confirm(
+        'Remove this member from the workplace? Their attendance history for this workplace will also be deleted.',
+      )
+    ) {
       run(removeMember);
     }
   }

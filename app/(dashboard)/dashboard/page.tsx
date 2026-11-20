@@ -14,17 +14,32 @@ export default async function DashboardPage() {
     : [];
 
   const orgIds = memberships.map((m) => m.organizationId);
+  const managerOrgIds = memberships
+    .filter((membership) => membership.role !== 'EMPLOYEE')
+    .map((membership) => membership.organizationId);
+  const employeeMembershipIds = memberships
+    .filter((membership) => membership.role === 'EMPLOYEE')
+    .map((membership) => membership.id);
 
-  const [orgCount, workplaceCount] = await Promise.all([
-    orgIds.length,
-    orgIds.length > 0
+  const [workplaces, assignedWorkplaces] = await Promise.all([
+    managerOrgIds.length > 0
       ? db.orm.public.Workplace
-          .where((workplace) => workplace.organizationId.in(orgIds))
+          .where((workplace) => workplace.organizationId.in(managerOrgIds))
           .select('id')
           .all()
-          .then((r) => r.length)
-      : 0,
+      : [],
+    employeeMembershipIds.length > 0
+      ? db.orm.public.WorkplaceMembership
+          .where((membership) => membership.membershipId.in(employeeMembershipIds))
+          .select('workplaceId')
+          .all()
+      : [],
   ]);
+  const orgCount = orgIds.length;
+  const workplaceCount = new Set([
+    ...workplaces.map((workplace) => workplace.id),
+    ...assignedWorkplaces.map((membership) => membership.workplaceId),
+  ]).size;
 
   const stats = [
     { label: 'Organizations', value: orgCount, href: '/dashboard/organizations' },

@@ -2,7 +2,11 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { getCurrentUser } from '@/lib/auth/dal';
 import { db } from '@/prisma/db';
-import { getMemberContext, canManageMembers } from '@/lib/permissions';
+import {
+  getMemberContext,
+  canManageMembers,
+  canViewAttendanceRoster,
+} from '@/lib/permissions';
 import { PageHeader } from '@/components/shared/page-header';
 import { EmptyState } from '@/components/shared/empty-state';
 import { Badge } from '@/components/shared/badge';
@@ -30,10 +34,18 @@ export default async function WorkplacePage({ params }: Props) {
 
   if (!workplace || !ctx) notFound();
 
-  const wms = await db.orm.public.WorkplaceMembership
-    .where({ workplaceId: wpId, organizationId: orgId_ })
-    .select('id', 'membershipId')
-    .all();
+  const showRoster = canViewAttendanceRoster(ctx);
+  const wms = showRoster
+    ? await db.orm.public.WorkplaceMembership
+        .where({ workplaceId: wpId, organizationId: orgId_ })
+        .select('id', 'membershipId')
+        .all()
+    : ctx.workplaceMembershipId
+      ? await db.orm.public.WorkplaceMembership
+          .where({ id: ctx.workplaceMembershipId, workplaceId: wpId, organizationId: orgId_ })
+          .select('id', 'membershipId')
+          .all()
+      : [];
 
   const membershipIds = wms.map((w) => w.membershipId);
 
